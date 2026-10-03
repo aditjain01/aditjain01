@@ -1,0 +1,62 @@
+---
+title: Agent memory with five memory types and vector search on a relational store
+slug: agent-memory-five-types
+summary: Give an agent memory by classifying what it remembers into a few types and keeping the vectors next to the relational columns, so one query can filter by scope and rank by similarity.
+date: 2026-10-03
+draft: true
+diagram: memory
+---
+
+<p class="todo">TODO(adit): confirm the five memory types below match what runs in production, rename them if they differ, then remove this note and set <code>draft: false</code>.</p>
+
+Most agent memory fails in one of two ways. Either it remembers everything, and the useful items drown in noise, or it is a bag of embeddings with no notion of whose memory it is, so the wrong thing comes back at the wrong time. Both come from treating memory as a single undifferentiated thing.
+
+The approach that has worked for me has two parts: **type the memories**, and **keep the vectors in the same relational store as everything else.**
+
+## Why types
+
+"Remember this" means different things. Remembering that a user prefers weekly summaries is not the same as remembering how a particular metric is defined, and neither is the same as remembering what happened in last Tuesday's analysis. They have different lifetimes, different owners and different reasons to be forgotten. I use five types:
+
+1. **Working memory.** State for the current task. It lives for one run and is rarely persisted.
+2. **Episodic memory.** What happened: a run, an outcome, a correction. It is time-stamped and tied to a thread.
+3. **Semantic memory.** Facts and definitions that stay true across conversations, such as how the organization defines a term.
+4. **Procedural memory.** How to do things: a pattern for a kind of question that worked, a preferred way to present a result.
+5. **Preference memory.** Stable facts about a person or team: format, level of detail, what they usually care about.
+
+The point of the split is not taxonomy for its own sake. Each type gets its own write rule, its own scope and its own expiry. Episodic memories age out, and semantic ones are reviewed. Preferences belong to a user and must never leak to another.
+
+## The write path
+
+On each turn, a small step decides whether anything is worth remembering, and if so, which type it is. **Most turns write nothing.** That is the single most important rule. A memory system that writes every turn is a log with a retrieval problem.
+
+If something is worth keeping, it is written once, with its type, owner, scope, source and an embedding, to a row in an ordinary table.
+
+## Why a relational store
+
+The usual first move is a dedicated vector database. For memory, I think the better default is a relational database with a vector extension, for three reasons.
+
+**Scope is a relational problem.** Whose memory is this, which workspace, which type, has it expired? These are exact filters, and a relational database does them well. Doing them after the vector search, in application code, is how permission bugs happen. Doing them in the same query means the database enforces the boundary.
+
+**There is one system to keep consistent.** The memory, its metadata and the thing it came from can live in one transaction. There is no second store drifting away from the first, and no sync job to monitor.
+
+**It is operationally boring.** Backups, access control, migrations and observability already exist. For the volumes an agent memory reaches, which are far below web-scale search, the performance is more than enough.
+
+## The read path
+
+At the start of a turn, the request is embedded, then the query **filters first and ranks second**: restrict by owner, scope, type and freshness, then order the survivors by similarity and take a small number.
+
+Two details matter more than the embedding model:
+
+- **Keep the result small and labeled.** A handful of memories, each tagged with its type, beats twenty undifferentiated snippets. The model should know that one item is a preference and another is a past correction.
+- **Let types shape retrieval.** Preferences are fetched by owner, not similarity, since you always want them. Episodic memories are ranked by similarity and recency together.
+
+## Failure modes to design for
+
+- **Staleness.** A semantic memory that was true last quarter. Give such memories a review date, and prefer a correction path that lets the user say "that is out of date."
+- **Over-writing.** The write step becomes too eager. Measure the write rate and treat a rising rate as a bug.
+- **Leakage.** A memory scoped to one person surfacing for another. This is why the scope filter lives in the query and not in the application.
+- **Unexplained behavior.** If the agent does something because of a memory, the user should be able to see which one.
+
+## Takeaway
+
+Treat memory as a small, typed, scoped data model rather than an embedding index. Put it where your other scoped data already lives, filter before you rank, and be stingy about what you write.

@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import { getWork, getWriting } from '../utils/content';
+import { site, isTodo } from '../data/site';
+import { url } from '../utils/url';
+
+const work = await getWork();
+const platform = work.find((e) => e.data.slug === 'enterprise-ai-analytics-platform')!;
+const compete = work.find((e) => e.data.slug === 'competescan')!;
+const [note] = await getWriting({ includeDrafts: false });
+---
+
+<Base>
+  <div class="wrap">
+    <section class="page-head" aria-labelledby="headline">
+      <p class="eyebrow">{site.name}</p>
+      <h1 id="headline" class="measure" style="max-width: 18ch">I build production agent systems and the infrastructure under them.</h1>
+      <p class="lede measure">Senior AI engineer and product owner. Physics-trained, systems-minded.</p>
+    </section>
+
+    <section class="section" aria-labelledby="featured">
+      <h2 id="featured">Featured</h2>
+      <ul class="cards">
+        <li>
+          <Card
+            href={url(`/work/${platform.data.slug}`)}
+            title={platform.data.title}
+            summary={platform.data.summary}
+            stage={platform.data.stage}
+            kind="Case study"
+          />
+        </li>
+        <li>
+          <Card
+            href={url(`/work/${compete.data.slug}`)}
+            title={compete.data.title}
+            summary={compete.data.summary}
+            stage={compete.data.stage}
+            kind="Case study"
+          />
+        </li>
+        <li>
+          {
+            note ? (
+              <Card href={url(`/writing/${note.data.slug}`)} title={note.data.title} summary={note.data.summary} kind="Writing" />
+            ) : (
+              <Card
+                href={url('/writing')}
+                title="Technical notes"
+                summary="Short write-ups on memory, citations, task queues, retrieval and event design for agent platforms. The first notes are in progress."
+                kind="Writing"
+              />
+            )
+          }
+        </li>
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="about">
+      <h2 id="about">About</h2>
+      <p class="prose measure">
+        I work on applied AI in healthcare analytics: multi-agent systems, evaluation, and retrieval, built to be used by real people every day. My
+        foundation is physics, which is where I learned to ask what a system is actually constrained by. On the side I build ventures that
+        keep me shipping and operating software end to end.
+      </p>
+      <p><a href={url('/about')}>More about how I work</a></p>
+    </section>
+
+    <section class="section" aria-labelledby="links">
+      <h2 id="links">Links</h2>
+      <ul class="link-row">
+        <li><a href={site.github}>GitHub</a></li>
+        <li>{isTodo(site.linkedin) ? <span class="todo-inline">{site.linkedin}</span> : <a href={site.linkedin}>LinkedIn</a>}</li>
+        <li>{isTodo(site.email) ? <span class="todo-inline">{site.email}</span> : <a href={`mailto:${site.email}`}>Email</a>}</li>
+        <li>
+          {site.resumeFile ? <a href={url(site.resumeFile)}>Resume (PDF)</a> : <span class="todo-inline">{site.resume}</span>}
+        </li>
+      </ul>
+    </section>
+  </div>
+</Base>

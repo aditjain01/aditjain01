@@ -1,0 +1,95 @@
+---
+title: Enterprise AI analytics platform
+slug: enterprise-ai-analytics-platform
+summary: A multi-product AI analytics platform for a large health insurer's Medicare business, with conversational BI at its core.
+stage: In production
+role: Technical and product lead
+stack: [Python, LangGraph, PostgreSQL, pgvector, OpenTelemetry, MCP, Kubernetes]
+order: 1
+diagram: platform
+---
+
+## Context
+
+A large health insurer's Medicare business runs on analytics, and most people who need an answer cannot write SQL or wait for an analyst. The goal was a platform where anyone could ask a question in plain language and get a trustworthy, explainable answer over governed data, and where further AI products could be added without rebuilding the foundations each time.
+
+The data is sensitive. Two constraints shaped everything else: **data is masked, and the system runs inside a private network.** These are design constraints, not deployment details. They decided how the model reaches data, how tools are authorized, and how we observe the system.
+
+## My role
+
+Technical and product lead. I owned the architecture, the evaluation approach and the product direction.
+
+## Architecture
+
+The platform has four layers. Reading the diagram from the bottom up:
+
+**Core platform.** Four pieces carry most of the weight.
+
+- **Agent runtime.** Agents run on LangGraph with a custom database-backed checkpointer. A self-hosted run, thread and assistant API sits in front, so products integrate against our own contract.
+- **Semantic layer and warehouse.** The model plans against governed business definitions rather than raw tables. Natural-language-to-SQL is generated over that layer, and the warehouse data is masked.
+- **Streaming layer.** Run events go through pub/sub fan-out and are stored, so clients can attach late, reconnect, and replay a run.
+- **Eval harness.** Golden SQL datasets and an LLM judge decide whether a change to a prompt, tool or model is an improvement.
+
+Around those sit cross-cutting services: OpenTelemetry for observability, product analytics with a `noun.verb` event taxonomy, agent memory with five memory types and vector search, and MCP integration with delegated OAuth for remote tools.
+
+**Domain.** Domain context is configuration on top of the core: prompts and tools, semantic models, and golden datasets for each domain.
+
+**Product orchestration.** Each product composes its own agent graph from shared nodes.
+
+**Product surface.** Conversational BI is the first and deepest surface. Others are thin because the layers below do the heavy lifting.
+
+## Key decisions and trade-offs
+
+### Generate SQL over a semantic layer, not over raw tables
+
+**Chose:** a semantic layer of governed metrics and entities as the only thing the model plans against.
+
+**Rejected:** giving the model the physical schema and relying on prompt engineering to get joins and definitions right.
+
+**Why:** accuracy and trust. A metric defined once cannot be defined five different ways by five different generations. It also kept raw data out of the model's reach, which the privacy constraints required anyway. The cost is that someone has to build and maintain the layer.
+
+### Evaluate on golden SQL and an LLM judge, together
+
+**Chose:** execution-based comparison against golden SQL datasets, plus an LLM judge for the quality of the final answer.
+
+**Rejected:** relying on human spot checks, or on an LLM judge alone.
+
+**Why:** golden SQL is objective but narrow, and a judge is broad but soft. Together they catch regressions in correctness and in explanation, and they made changes cheap to try and safe to ship.
+
+### Own the runtime API and the checkpointer
+
+**Chose:** LangGraph for graph execution, with a custom database-backed checkpointer and a self-hosted run, thread and assistant API.
+
+**Rejected:** a managed agent-hosting service.
+
+**Why:** the private network and data rules ruled out sending state outside, and we wanted run state in the same operational footing as everything else: queryable, backed up and observable. The trade-off is that we own its reliability.
+
+### Make streaming replayable
+
+**Chose:** pub/sub fan-out with run events persisted, so a client can resume from the last event it saw.
+
+**Rejected:** a direct stream from the process running the agent to the browser.
+
+**Why:** long agent runs outlive tabs, networks and deploys. Replay turned a class of "my answer disappeared" failures into a non-event, and it gave us a durable record of what each run did.
+
+### Delegate authorization to the user for remote tools
+
+**Chose:** MCP for remote tools, with delegated OAuth so a tool acts with the caller's own permissions.
+
+**Rejected:** a shared service credential for tools.
+
+**Why:** a shared credential makes the agent a privilege-escalation path. Delegation keeps the audit trail honest and the permission model unchanged.
+
+## Outcomes
+
+These are rounded on purpose.
+
+- **Query success** in the high 90s percent on the evaluation sets.
+- **Latency** roughly a third lower after the rebuild.
+- **Adoption:** about 100 active users, with about 3x adoption breadth and 4x per-user engagement over six months.
+
+## What I'd do next, and what I learned
+
+Next: push evaluation closer to production traffic, so the golden sets grow from real questions that failed, and give domain owners self-serve tooling for the semantic layer.
+
+What I learned: most of the quality in an analytics agent comes from the data contract underneath it, not the model. The second lesson is that observability and evaluation are the product's steering wheel. Without them you can ship, but you cannot improve on purpose.

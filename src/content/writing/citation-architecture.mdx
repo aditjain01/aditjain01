@@ -1,0 +1,57 @@
+---
+title: "Citation architecture: deterministic source tie-back with structured outputs"
+slug: citation-architecture
+summary: Make citations a field in a constrained output schema, scoped per message and checked by a plain validator, so every claim resolves to a stored source instead of to prose the model wrote.
+date: 2026-10-02
+draft: true
+diagram: citations
+---
+
+Citations written by a language model are usually decoration. They look like references, they read well, and a surprising number of them point to something that does not say what is claimed, or does not exist. The model is producing text that resembles a citation, not performing one.
+
+The fix is to stop treating a citation as text. Make it **data**, make the set of things that can be cited **explicit for each message**, and **verify mechanically** that every citation is valid.
+
+## The shape of the problem
+
+Imagine an assistant that answers questions over a body of sources: news, uploaded documents, internal reports. A useful answer needs to show where each claim came from, and the user needs to open that source and check. Three things go wrong with prose citations:
+
+- **Invention.** The model cites a source that was never retrieved.
+- **Drift.** The citation is real, but the claim is not supported by it.
+- **Fragility.** The citation is a string in free text, so rendering it means parsing it, and parsing fails quietly.
+
+## Four pieces
+
+**1. Stable ids.** Every source record has an id that does not change and that resolves to exactly one stored record. This is the foundation. Without it, "tie back to the source" has no meaning.
+
+**2. A per-message scope.** Before the model runs, decide which source ids are allowed for this message. This is usually the set of records retrieved for this question, plus anything the user explicitly attached. The scope is an allow-list, and it is computed outside the model.
+
+**3. A schema-constrained output.** Ask the model for structured output in which an answer is a list of claims, and each claim has text and a list of source ids. The schema, enforced by the provider's structured-output support, means the citations are not something to extract. They are fields.
+
+**4. A validator.** After generation, a plain function checks that every cited id is in the message's scope. It involves no model. If an id is unknown or out of scope, the response fails and the system retries, ideally with the failure named in the prompt.
+
+## What this buys you
+
+**Determinism where it counts.** Whether a citation points to a real, allowed source is now a yes-or-no check. The interface renders markers from fields and links each to the stored record. Nothing is parsed from prose.
+
+**A bounded failure.** Invention is eliminated by construction, since an id outside the scope cannot pass. What remains is drift, which is a smaller and more tractable problem.
+
+**A clear boundary of responsibility.** The model decides what to say and which sources support it. Code decides which sources it may cite and whether the output is well-formed.
+
+## What it does not buy you
+
+Be honest about the limit. The validator proves that the cited source was in scope, not that it supports the claim. Drift is still possible. Three things reduce it:
+
+- **Narrow claims.** Short, specific claims are easier to support and to check than paragraphs.
+- **Spans.** Let a citation point to a passage within the source and not only the record, so a user can see the exact text.
+- **Sampled review.** Use an LLM judge or human review on a sample to estimate how often a cited source fails to support its claim, and treat that rate as a metric.
+
+## Practical notes
+
+- **Scope per message, not per conversation.** A conversation accumulates sources, and a long-lived scope lets stale sources leak into new answers. Recompute for each message.
+- **Keep ids opaque to the model's imagination.** Short, meaningless ids are harder to guess than ones that look like titles.
+- **Retry with the reason.** "Source id X is not in scope, choose from these" fixes most failures in one more attempt.
+- **Store the citation with the answer.** If the sources change later, you still know what was cited at the time.
+
+## Takeaway
+
+A citation you cannot check mechanically is not worth much. Give every source a stable id, fix the allowed set before the model runs, require citations as fields in the output schema, and validate them with ordinary code.

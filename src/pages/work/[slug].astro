@@ -1,0 +1,65 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Diagram from '../../components/Diagram.astro';
+import StageBadge from '../../components/StageBadge.astro';
+import { getDiagram } from '../../diagrams';
+import { url } from '../../utils/url';
+import ProseLink from '../../components/ProseLink.astro';
+import { existsSync } from 'node:fs';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('work');
+  return entries.map((entry) => ({ params: { slug: entry.data.slug }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+const all = await getCollection('work');
+const parent = data.builtOn ? all.find((e) => e.data.slug === data.builtOn) : undefined;
+const demoExists = data.demo ? existsSync(new URL(`../../../public${data.demo}`, import.meta.url)) : false;
+---
+
+<Base title={data.title} description={data.summary} og={`work/${data.slug}`} type="article">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow"><a href={url('/work')} style="color: inherit">Work</a> / {data.stage === 'Design study' ? 'Design study' : 'Case study'}</p>
+      <h1 class="measure">{data.title}</h1>
+      <p class="lede measure">{data.summary}</p>
+      <p style="margin: 1rem 0 0"><StageBadge stage={data.stage} /></p>
+      {
+        parent && (
+          <p class="measure" style="margin-top: 0.75rem">
+            Built on <a href={url(`/work/${parent.data.slug}`)}>{parent.data.title}</a>.
+          </p>
+        )
+      }
+      <dl class="facts">
+        <dt>Role</dt>
+        <dd>{data.role}</dd>
+        <dt>Stack</dt>
+        <dd>{data.stack.join(', ')}</dd>
+      </dl>
+    </header>
+
+    <Diagram data={getDiagram(data.diagram)} hero />
+
+    <div class="prose measure" style="margin-top: 1rem">
+      <Content components={{ a: ProseLink }} />
+    </div>
+
+    {
+      data.demo && (
+        <section class="measure" style="margin-top: 3rem" aria-labelledby="demo">
+          <h2 id="demo" style="margin-top: 0">Interactive demo</h2>
+          {demoExists ? (
+            <iframe class="demo-frame" src={url(data.demo)} title={`${data.title} interactive demo`} loading="lazy" />
+          ) : (
+            <p class="todo">TODO(adit): provide the interactive ERD as a static HTML file at public{data.demo}. It will be embedded here.</p>
+          )}
+        </section>
+      )
+    }
+  </div>
+</Base>

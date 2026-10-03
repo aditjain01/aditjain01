@@ -1,0 +1,24 @@
+---
+interface Props {
+  stage: 'In production' | 'Partly built' | 'Design study';
+}
+const { stage } = Astro.props;
+---
+
+<span class="stage" title={stage}>
+  <svg viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+    {
+      stage === 'In production' ? (
+        <circle cx="5" cy="5" r="4" fill="var(--accent)" stroke="var(--accent)" stroke-width="1" />
+      ) : stage === 'Partly built' ? (
+        <>
+          <circle cx="5" cy="5" r="4" fill="none" stroke="var(--accent)" stroke-width="1" />
+          <path d="M5 1 A4 4 0 0 1 5 9 Z" fill="var(--accent)" />
+        </>
+      ) : (
+        <circle cx="5" cy="5" r="4" fill="none" stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 1.4" />
+      )
+    }
+  </svg>
+  {stage}
+</span>

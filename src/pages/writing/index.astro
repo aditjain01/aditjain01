@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getWriting, getDraftTitles } from '../../utils/content';
+import { showDrafts, url } from '../../utils/url';
+
+const notes = await getWriting();
+const inProgress = showDrafts ? [] : await getDraftTitles();
+const fmt = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+---
+
+<Base title="Writing" description="Technical notes on building production agent systems.">
+  <div class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">Writing</p>
+      <h1>Technical notes</h1>
+      <p class="lede measure">Short notes, each with one diagram and the takeaway up top.</p>
+    </section>
+
+    {
+      notes.length > 0 && (
+        <ul class="entry-list measure" style="margin-top: 2rem">
+          {notes.map((n) => (
+            <li>
+              <h3>
+                <a href={url(`/writing/${n.data.slug}`)}>{n.data.title}</a>
+                {n.data.draft && <span class="mono"> (draft)</span>}
+              </h3>
+              <p>{n.data.summary}</p>
+              <p class="mono">{fmt(n.data.date)}</p>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      inProgress.length > 0 && (
+        <section class="section measure" aria-labelledby="wip">
+          <h2 id="wip">In progress</h2>
+          <ul>
+            {inProgress.map((n) => (
+              <li>{n.data.title}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</Base>

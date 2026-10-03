@@ -1,0 +1,75 @@
+---
+title: CompeteScan, proactive competitive intelligence
+slug: competescan
+summary: A system that captures market signals, removes duplicates in three tiers, scores them, and delivers a short list of cited insights.
+stage: In production
+role: Technical and product lead
+stack: [Python, PostgreSQL, pgvector, LLM structured outputs, embeddings]
+order: 3
+diagram: competescan
+---
+
+## Context
+
+Analysts who track competitors are buried in news, feeds and documents, and most of it is repeated, minor or irrelevant. They need the few things that matter, with a way to check each claim against its source. CompeteScan captures signals, separates the new from the repeated, ranks what remains for a specific audience, and lets people ask follow-up questions over the original material.
+
+## My role
+
+Technical and product lead. I designed the pipeline and the citation approach, and set what counts as an insight.
+
+## Architecture
+
+Three stages: **capture, score, analyze.**
+
+**Capture.** Signals come from news, feeds and uploaded documents. Each is tagged on arrival by time, market, competitor and audience scope. Everything lands in a **raw store** that deduplicates on a content hash and keeps the original, which is what makes later citation possible.
+
+**Score.** Dedup continues with embedding similarity, which groups near-duplicate stories so one event is analyzed once. A **scoring formula** ranks what is left. Organizational context enriches signals before scoring, so the same news can rank differently for different audiences.
+
+**Analyze.** The third tier of dedup is an LLM that narrates what is new against what is known. It works with a **controlled topic vocabulary**, so successive summaries of the same topic can be compared as stable diffs. Results go into an **insight store**, and a **chat deep-dive** lets people ask questions over the original sources.
+
+## Key decisions and trade-offs
+
+### Dedup in three tiers, cheapest first
+
+**Chose:** content hash, then embedding similarity, then LLM narration.
+
+**Rejected:** sending everything to an LLM and asking it to ignore repeats.
+
+**Why:** cost and consistency. Each tier removes the cheapest class of duplicates before the next, more expensive tier sees the data. The hash is exact, the embeddings are approximate and tunable, and the model only handles what truly needs judgment.
+
+### A controlled topic vocabulary
+
+**Chose:** a fixed set of topics the model must choose from.
+
+**Rejected:** free-text topics generated per summary.
+
+**Why:** free text drifts, so "pricing change" and "price adjustments" become different topics and diffs become noise. A controlled vocabulary makes change detection reliable. The cost is curating the vocabulary as the market changes.
+
+### Citations as data, scoped per message
+
+**Chose:** schema-constrained structured outputs in which each claim carries source ids, with the allowed source set fixed for each message.
+
+**Rejected:** asking the model to write citations in prose and parsing them afterward.
+
+**Why:** deterministic tie-back. The model can only cite what is in scope, a plain validator can reject anything else, and the interface renders citations from fields. Users can verify any claim in one click.
+
+### A transparent scoring formula
+
+**Chose:** an explicit weighted formula, enriched with organizational context.
+
+**Rejected:** asking an LLM to rate importance directly.
+
+**Why:** analysts need to know why something surfaced and to adjust it. A formula can be inspected and tuned. A model's rating mostly cannot.
+
+## Outcomes
+
+Rounded on purpose.
+
+- A document corpus in the low thousands, built over about four months.
+- Dozens of raw signals per day reduced to roughly 15 to 20 insights per day.
+
+## What I'd do next, and what I learned
+
+Next: feed analyst feedback on insights back into the scoring weights, and make the vocabulary easier to evolve without breaking history.
+
+What I learned: for an intelligence product, trust is the feature. Cheap dedup, stable topics and one-click citations did more for adoption than any improvement in prose quality.

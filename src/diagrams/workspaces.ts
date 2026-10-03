@@ -1,0 +1,51 @@
+import type { DiagramData } from './types';
+
+export const workspaces: DiagramData = {
+  id: 'workspaces',
+  width: 760,
+  height: 322,
+  title: 'Workspace, thread and artifact objects with checkpoint lanes, and the trigger model',
+  caption:
+    'Left: the object model. An artifact is a frozen snapshot in a thread and a live parameterized query in the library. Right: three trigger types feed one tasks primitive.',
+  groups: [
+    { x: 14, y: 14, w: 400, h: 292, label: 'Workspace' },
+    { x: 434, y: 14, w: 312, h: 292, label: 'Proactive intelligence' },
+  ],
+  nodes: [
+    { id: 'thread', x: 34, y: 48, w: 170, h: 52, title: 'Thread', sub: 'conversation with the agent', ramp: 'teal',
+      note: 'The chat. Artifacts created here appear in it as snapshots.' },
+    { id: 'artifact', x: 224, y: 48, w: 170, h: 52, title: 'Artifact', sub: 'one object, two views', ramp: 'teal',
+      note: 'A result worth keeping: a chart, table or analysis defined by a typed query and its parameters.' },
+    { id: 'snap', x: 34, y: 140, w: 170, h: 52, title: 'Snapshot in chat', sub: 'frozen at creation',
+      note: 'Inside a thread the artifact is a frozen result, so the conversation stays a faithful record.' },
+    { id: 'live', x: 224, y: 140, w: 170, h: 52, title: 'Live in library', sub: 'parameterized query',
+      note: 'In the library the same artifact re-runs its query with new parameters against current data.' },
+    { id: 'lanes', x: 34, y: 232, w: 170, h: 56, title: 'Checkpoint lanes', sub: 'one lane per artifact',
+      note: 'Each artifact has its own checkpoint history, so refining one does not rewrite the thread or other artifacts.' },
+    { id: 'sql', x: 224, y: 232, w: 170, h: 56, title: 'Typed SQL', sub: 'declared parameters only',
+      note: 'Artifact queries are parameterized and typed. Parameters are values, never free-form SQL.' },
+
+    { id: 'ev', x: 454, y: 48, w: 150, h: 48, title: 'Event-driven', sub: 'a data change fires',
+      note: 'Fires when something in the data or the world changes.' },
+    { id: 'sch', x: 454, y: 108, w: 150, h: 48, title: 'Scheduled', sub: 'recurring cadence',
+      note: 'Fires on a calendar, for example every weekday morning.' },
+    { id: 'ses', x: 454, y: 168, w: 150, h: 48, title: 'Session-triggered', sub: 'started from chat',
+      note: 'A user asks in a thread for something to be watched or repeated.' },
+    { id: 'tasks', x: 624, y: 48, w: 108, h: 168, title: 'Tasks', sub: 'async primitive', ramp: 'teal',
+      note: 'A single primitive for asynchronous work with state, retries and results, instead of a bespoke queue per feature.' },
+    { id: 'routine', x: 454, y: 236, w: 278, h: 52, title: 'Agent routine', sub: 'recurring, writes artifacts',
+      note: 'A task that runs an agent on a schedule or trigger and refreshes artifacts with what it finds.' },
+  ],
+  edges: [
+    { from: 'thread', to: 'snap' },
+    { from: 'artifact', to: 'live' },
+    { from: 'artifact', to: 'snap', fromSide: 'b', toSide: 't', fromAt: 0.12, toAt: 0.88, dashed: true, label: 'freeze', mid: 120 },
+    { from: 'snap', to: 'lanes' },
+    { from: 'live', to: 'sql' },
+    { from: 'ev', to: 'tasks', fromSide: 'r', toSide: 'l', toAt: 0.14 },
+    { from: 'sch', to: 'tasks', fromSide: 'r', toSide: 'l', toAt: 0.5 },
+    { from: 'ses', to: 'tasks', fromSide: 'r', toSide: 'l', toAt: 0.86 },
+    { from: 'tasks', to: 'routine', fromSide: 'b', toSide: 't', fromAt: 0.5, toAt: 0.805 },
+    { from: 'routine', to: 'live', fromSide: 'l', toSide: 'r', toAt: 0.5, mid: 424, label: 'refreshes' },
+  ],
+};

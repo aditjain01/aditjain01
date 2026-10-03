@@ -1,0 +1,90 @@
+---
+title: Internal app generator
+slug: internal-app-generator
+summary: A factory that generates and hosts data-intensive internal apps through prompt-driven code generation against a constrained scaffold.
+stage: Design study
+role: Technical and product lead
+stack: [Code generation, Declarative specs, Sandboxing, Semantic layer, Component library]
+order: 5
+diagram: appgen
+---
+
+## Context
+
+Every large organization has a long tail of internal data apps that nobody has the time to build: a dashboard here, a workflow tool there. Letting anyone generate one with a prompt is attractive, and it is also how an organization ends up with hundreds of unreviewed, unowned apps with direct access to sensitive data. This study is about getting the benefit without that outcome.
+
+**Status, plainly:** this is in scoping. It is a design, not a built system.
+
+## My role
+
+Technical and product lead. I framed the problem and designed the architecture and the governance model.
+
+## Architecture
+
+A person writes a **prompt.** **Codegen** produces a rigid declarative spec, then code, against a **constrained scaffold**: an approved component library and a data-access SDK. The app runs in a **sandboxed preview.** A **review gate** requires a human sign-off before the app is **hosted** centrally.
+
+Every query goes through a **semantic-layer proxy** that passes the viewer's identity through, so an app can only show data the viewer could query directly. A **sandboxed custom-code escape hatch** exists for what the components cannot express, and it draws extra review.
+
+## Key decisions and trade-offs
+
+### Generate a declarative spec, not free-form code
+
+**Chose:** a rigid declarative spec as the primary output, with code produced from it.
+
+**Rejected:** letting the model write whatever application code it wants.
+
+**Why:** a spec is small enough for a human to review and constrained enough to validate automatically. Free-form code is neither. The cost is expressiveness, which the escape hatch addresses.
+
+### A constrained scaffold
+
+**Chose:** only approved components and one data-access SDK.
+
+**Rejected:** a general-purpose framework with guidelines.
+
+**Why:** guidelines are optional and a scaffold is not. Consistency, accessibility and data safety come from what the generator is allowed to use.
+
+### A sandboxed escape hatch
+
+**Chose:** allow custom code in a sandbox, with extra scrutiny at review.
+
+**Rejected:** forbidding custom code entirely.
+
+**Why:** a hard wall pushes people to build shadow tools elsewhere. A controlled hatch keeps the exceptions visible and reviewed.
+
+### A human review gate before hosting
+
+**Chose:** every app passes a review before it is hosted.
+
+**Rejected:** auto-publishing with after-the-fact audits.
+
+**Why:** the gate is where governance happens cheaply: reviewing a spec and a few queries is fast, and cleanup of a bad app already in use is not.
+
+### Central ownership after launch
+
+**Chose:** the platform team owns hosting, upgrades and retirement.
+
+**Rejected:** leaving each app with its author.
+
+**Why:** authors move on. Without a named owner, apps rot and so do their permissions.
+
+### Viewer identity passthrough
+
+**Chose:** queries run as the viewer through the semantic-layer proxy.
+
+**Rejected:** a shared application credential.
+
+**Why:** a shared credential turns every app into a way to see data its viewers could not otherwise access.
+
+## Outcomes
+
+None yet. This is a design study. Success would look like:
+
+- Time from request to a reviewed, hosted app.
+- Share of generated apps approved on first review.
+- Zero apps showing data the viewer could not have queried.
+
+## What I'd do next, and what I learned
+
+Next: build the spec format and a three-component prototype, then test whether reviewers can approve a spec faster than they could review equivalent code.
+
+What I learned from the scoping: the product is the governance, not the generation. Generation is the easy part, and the review gate, ownership and identity passthrough are what make it safe to offer.

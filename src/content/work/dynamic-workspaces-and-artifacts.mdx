@@ -1,0 +1,79 @@
+---
+title: Dynamic workspaces and artifacts
+slug: dynamic-workspaces-and-artifacts
+summary: An extension that turns chat results into durable, parameterized artifacts and adds proactive, scheduled agent work.
+stage: Partly built
+role: Technical and product lead
+stack: [Python, LangGraph, PostgreSQL, SQL, TypeScript]
+order: 2
+diagram: workspaces
+builtOn: enterprise-ai-analytics-platform
+---
+
+## Context
+
+This is built on the [enterprise analytics platform](/work/enterprise-ai-analytics-platform). Chat is a good way to ask a question and a poor way to keep an answer. People re-ask the same questions every week, and a result buried in a thread is neither reusable nor trustworthy a month later. This extension makes results into objects people can keep, refresh and share, and lets the agent do some work without being asked.
+
+**Status, plainly:** parts of this are built and parts are design. The object model and the artifact flow are the most advanced. The proactive trigger model and recurring routines are design work that follows the same primitives.
+
+## My role
+
+Technical and product lead. I defined the object model and the product direction.
+
+## Architecture
+
+Three objects: **workspace, thread and artifact.** A workspace contains threads and artifacts. A thread is a conversation. An artifact is a result worth keeping.
+
+An artifact is **dual-use**. Inside a chat it is a frozen snapshot, so the conversation stays an accurate record. In the library it is a live, parameterized query that can re-run with new parameters on current data. Each artifact has its **own checkpoint lane**, so refining one artifact does not rewrite the thread or any other artifact.
+
+Artifacts are backed by **typed, parameterized SQL**. Parameters are declared values, never free-form SQL, which keeps a saved artifact safe to re-run by someone other than its author.
+
+On the right of the diagram is the **trigger model** for proactive intelligence. Three triggers, event-driven, scheduled and session-triggered, all feed one **tasks primitive** for asynchronous work. A recurring **agent routine** is a task that runs an agent and refreshes artifacts.
+
+## Key decisions and trade-offs
+
+### One artifact, two views
+
+**Chose:** a single object that is a snapshot in chat and a live query in the library.
+
+**Rejected:** separate "chat result" and "saved report" types.
+
+**Why:** two types means copying, drift, and a "save as" step users skip. One object with two views means a result becomes durable without being rebuilt. The cost is a more careful lifecycle, since the same object must be both frozen and live.
+
+### Typed, parameterized queries instead of free SQL
+
+**Chose:** parameters with declared types over a fixed query shape.
+
+**Rejected:** letting the agent or user edit raw SQL on a saved artifact.
+
+**Why:** safety and shareability. A parameterized artifact can be re-run by anyone with the right access without becoming an injection surface. It limits flexibility, and for exploration the answer is to go back to chat and mint a new artifact.
+
+### A checkpoint lane per artifact
+
+**Chose:** independent history for each artifact.
+
+**Rejected:** one linear history per workspace.
+
+**Why:** artifacts evolve at different speeds. Independent lanes let someone roll one back or branch it without losing the rest of the work.
+
+### One tasks primitive for all async work
+
+**Chose:** a generic tasks primitive that every trigger and routine uses.
+
+**Rejected:** a bespoke queue or job type per feature.
+
+**Why:** retries, state, visibility and cancellation are the same problem every time. Solving them once is cheaper and easier to operate. The risk is over-generalizing, so the primitive stays small and features sit on top.
+
+## Outcomes
+
+The built parts are early, so I am not reporting numbers. What I will hold this extension to:
+
+- Share of answers people keep as artifacts instead of re-asking.
+- Share of artifacts refreshed after the first day.
+- Whether recurring routines are kept after the first month.
+
+## What I'd do next, and what I learned
+
+Next: ship recurring routines on the tasks primitive, then event-driven triggers with a conservative notification policy.
+
+What I learned so far: the object model is the product. Once there is a clear noun for a kept result, the features follow, and without one they pile up as special cases.

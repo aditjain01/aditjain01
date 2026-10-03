@@ -1,0 +1,85 @@
+---
+title: NadiHMS
+slug: nadihms
+summary: An AI-native clinical companion and hospital management system for small clinics in smaller Indian cities.
+stage: Design study
+role: Technical and product lead
+stack: [PWA, Offline-first sync, Speech-to-text, LLM structured extraction, FHIR R4]
+order: 4
+diagram: nadihms
+demo: /demos/nadihms-erd.html
+---
+
+## Context
+
+Small clinics in smaller Indian cities mostly run on paper or on software built for large hospitals. Doctors see many patients in a short time, connectivity is unreliable, and any tool that makes the consultation slower will be abandoned. The question this study answers: what would a clinical system look like if the technology disappeared at the point of care?
+
+**Status, plainly:** the architecture is complete and the build has not started.
+
+## My role
+
+Technical and product lead. I own the product thesis, the architecture and the data model.
+
+## Architecture
+
+The thesis is that **technology should be invisible at the point of care.** The doctor talks to the patient. Everything else is the system's job.
+
+On the **clinic device**, an offline-first progressive web app captures voice, transcribes it, and extracts structured encounter fields for the doctor to confirm. **Manual entry is always available as a fallback**, because a doctor must never be blocked by a model that is unsure. Everything is written to a local store first.
+
+A **sync layer** reconciles local writes with the cloud when a connection exists. The cloud holds a **FHIR-aligned data model** across seven domains, with the encounter at the center, so every other record relates to a visit. The design aligns with FHIR R4 and with India's national digital health mission.
+
+## Key decisions and trade-offs
+
+### Offline-first, not online with a cache
+
+**Chose:** local writes first, with sync as a background job.
+
+**Rejected:** a cloud-first app with offline tolerance added later.
+
+**Why:** in the target clinics, an intermittent connection is the normal case. It also makes distribution simpler, since an installable app does not need a hospital IT department. The cost is conflict handling, which has to be designed early.
+
+### Incentives: decision support in return for data
+
+**Chose:** give the doctor useful decision support in exchange for the structured data they would not otherwise record.
+
+**Rejected:** asking doctors to enter data for the benefit of a downstream party.
+
+**Why:** a system that takes without giving gets avoided. The structured record is a by-product of a tool that helps in the moment.
+
+### Voice with a manual fallback
+
+**Chose:** voice to transcript to structured fields, with a plain form always one tap away.
+
+**Rejected:** a voice-only flow, and a form-only flow.
+
+**Why:** voice removes the typing burden, but no extraction pipeline is perfect, and clinical data has to be right. The doctor confirms what is extracted, and the form guarantees a way forward.
+
+### Align with standards from the start
+
+**Chose:** a FHIR R4 aligned schema and alignment with the national digital health mission.
+
+**Rejected:** a private schema with a conversion layer planned for later.
+
+**Why:** retrofitting a standard is more expensive than designing for it, and interoperability is what makes records useful beyond one clinic.
+
+### The encounter as the center of the schema
+
+**Chose:** seven domains, all related through the encounter.
+
+**Rejected:** a patient-centric model with visits as child records.
+
+**Why:** the clinical workflow is organized around visits. An encounter-centered model matches how data is created and how it is reviewed.
+
+## Outcomes
+
+There are no outcomes yet. This is a design study. If it is built, I would measure:
+
+- Time added to a consultation, with the goal of none.
+- Share of encounters where the doctor confirms extracted fields without edits.
+- Share of encounters completed fully offline.
+
+## What I'd do next, and what I learned
+
+Next: validate the voice pipeline against real recordings in the target languages before building anything else, since that is the riskiest assumption.
+
+What I learned: designing for the constraint, here an unreliable connection and a doctor with no spare attention, produces a simpler product than starting from features.

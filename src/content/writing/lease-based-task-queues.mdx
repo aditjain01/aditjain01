@@ -1,0 +1,16 @@
+---
+title: Lease-based task queues for agentic loops on Kubernetes
+slug: lease-based-task-queues
+summary: Long agent runs die when pods do. Leases with heartbeats let any worker safely pick up a task that another worker has stopped renewing.
+date: 2026-09-28
+draft: true
+---
+
+TODO(adit): decide whether to write this one first. Proposed outline:
+
+- The problem: agent loops run for minutes, pods are rescheduled, deploys happen, and "exactly once" is not available.
+- A lease model: claim a task with an expiry, renew it with a heartbeat, let it lapse on failure.
+- Making steps idempotent, and checkpointing so a resumed run continues instead of restarting.
+- Visibility timeouts versus leases, and why renewals matter for runs of unknown length.
+- Failure cases: slow heartbeats, split brain, poison tasks, backoff.
+- Diagram: task states and the lease lifecycle.

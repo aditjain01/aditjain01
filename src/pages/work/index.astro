@@ -1,0 +1,72 @@
+---
+import Base from '../../layouts/Base.astro';
+import StageBadge from '../../components/StageBadge.astro';
+import Card from '../../components/Card.astro';
+import { getWork } from '../../utils/content';
+import { site, isTodo } from '../../data/site';
+import { url } from '../../utils/url';
+
+const work = await getWork();
+const built = work.filter((e) => e.data.stage !== 'Design study');
+const studies = work.filter((e) => e.data.stage === 'Design study');
+---
+
+<Base title="Work" description="Case studies and design studies in production agent systems, with the stage of each stated plainly.">
+  <div class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">Work</p>
+      <h1>Case studies and design studies</h1>
+      <p class="lede measure">
+        Each one opens with the architecture. The badge says how far it got: in production, partly built, or a design study.
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="built">
+      <h2 id="built">Case studies</h2>
+      <ul class="cards">
+        {
+          built.map((e) => (
+            <li>
+              <Card href={url(`/work/${e.data.slug}`)} title={e.data.title} summary={e.data.summary} stage={e.data.stage} />
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="studies">
+      <h2 id="studies">Design studies</h2>
+      <ul class="cards">
+        {
+          studies.map((e) => (
+            <li>
+              <Card href={url(`/work/${e.data.slug}`)} title={e.data.title} summary={e.data.summary} stage={e.data.stage} />
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="ventures">
+      <h2 id="ventures">Ventures</h2>
+      <p class="prose measure">
+        Two companies I build and operate outside my day job. They are the proof that I ship and run real systems end to end, from
+        infrastructure to the product on top.
+      </p>
+      <ul class="entry-list" style="margin-top: 1rem">
+        <li>
+          <h3>Locumsquare</h3>
+          <p>Healthtech staffing platform for physician locum tenens work.</p>
+          <p class="mono">Azure Container Apps · PostgreSQL with private endpoints · Terraform across environments · OIDC-federated GitHub Actions CI/CD</p>
+          <p class="todo-inline">TODO(adit): product one-liner and current status</p>
+        </li>
+        <li>
+          <h3>Apsidata Solutions</h3>
+          <p>Client-facing software delivery.</p>
+          <p class="mono">Azure networking · Terraform workspace patterns</p>
+          <p class="todo-inline">TODO(adit): one-liner and any shareable, client-safe example</p>
+        </li>
+      </ul>
+    </section>
+  </div>
+</Base>

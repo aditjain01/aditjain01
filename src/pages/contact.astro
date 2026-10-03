@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, isTodo } from '../data/site';
+import { url } from '../utils/url';
+const rows = [
+  { label: 'Email', value: site.email, href: `mailto:${site.email}` },
+  { label: 'LinkedIn', value: site.linkedin, href: site.linkedin },
+  { label: 'GitHub', value: site.github, href: site.github },
+];
+---
+
+<Base title="Contact" description="How to reach me.">
+  <div class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">Contact</p>
+      <h1>Get in touch</h1>
+      <p class="lede measure">The best way to start is a short email with what you are building and where you think I could help.</p>
+    </section>
+
+    <dl class="facts measure" style="margin-top: 2rem; font-size: 1.05rem">
+      {
+        rows.map((r) => (
+          <>
+            <dt>{r.label}</dt>
+            <dd>{isTodo(r.value) ? <span class="todo-inline">{r.value}</span> : <a href={r.href}>{r.value.replace('mailto:', '')}</a>}</dd>
+          </>
+        ))
+      }
+      <dt>Resume</dt>
+      <dd>{site.resumeFile ? <a href={url(site.resumeFile)} download>Download PDF</a> : <span class="todo-inline">{site.resume}</span>}</dd>
+    </dl>
+  </div>
+</Base>

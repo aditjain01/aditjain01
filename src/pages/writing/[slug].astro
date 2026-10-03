@@ -1,0 +1,33 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Diagram from '../../components/Diagram.astro';
+import { getDiagram } from '../../diagrams';
+import { getWriting } from '../../utils/content';
+import { url } from '../../utils/url';
+import ProseLink from '../../components/ProseLink.astro';
+
+export async function getStaticPaths() {
+  const entries = await getWriting();
+  return entries.map((entry) => ({ params: { slug: entry.data.slug }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+const fmt = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+---
+
+<Base title={data.title} description={data.summary} og={`writing/${data.slug}`} type="article">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow"><a href={url('/writing')} style="color: inherit">Writing</a> / {fmt(data.date)}{data.draft ? ' / draft' : ''}</p>
+      <h1 class="measure">{data.title}</h1>
+      <p class="lede measure"><strong>Takeaway.</strong> {data.summary}</p>
+    </header>
+    {data.diagram && <Diagram data={getDiagram(data.diagram)} />}
+    <div class="prose measure" style="margin-top: 1rem">
+      <Content components={{ a: ProseLink }} />
+    </div>
+  </div>
+</Base>

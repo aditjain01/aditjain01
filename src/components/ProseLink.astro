@@ -1,0 +1,8 @@
+---
+// MDX link override: root-relative links respect the configured base path.
+import { url } from '../utils/url';
+const { href = '', ...rest } = Astro.props;
+const resolved = typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') ? url(href) : href;
+---
+
+<a href={resolved} {...rest}><slot /></a>

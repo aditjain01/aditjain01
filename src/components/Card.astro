@@ -1,0 +1,18 @@
+---
+import StageBadge from './StageBadge.astro';
+interface Props {
+  href: string;
+  title: string;
+  summary: string;
+  stage?: 'In production' | 'Partly built' | 'Design study';
+  kind?: string;
+}
+const { href, title, summary, stage, kind } = Astro.props;
+---
+
+<a class="card" href={href}>
+  {kind && <span class="eyebrow">{kind}</span>}
+  <h3>{title}</h3>
+  <p>{summary}</p>
+  {stage && <span class="meta"><StageBadge stage={stage} /></span>}
+</a>

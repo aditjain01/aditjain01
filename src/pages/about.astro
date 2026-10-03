@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../utils/url';
+---
+
+<Base title="About" description="Background, and how I work: applied ML grounded in physics, now owning production AI.">
+  <div class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">About</p>
+      <h1>Background, and how I think</h1>
+    </section>
+
+    <div class="prose measure" style="margin-top: 1.5rem">
+      <p>
+        I started in physics, and it still shapes how I work. Physics teaches you to find the constraint that actually binds, to distrust a model
+        you cannot test, and to keep a clear line between what you measured and what you assumed. That habit transfers directly to applied machine
+        learning.
+      </p>
+      <p>
+        I began as a machine learning engineer and moved into owning production AI as a technical and product lead. Today that means applied AI in
+        healthcare analytics: multi-agent systems, retrieval, and the evaluation work that tells you whether any of it is getting better. The
+        <a href={url('/work/enterprise-ai-analytics-platform')}>platform case study</a> is the clearest picture of that work.
+      </p>
+
+      <h2>How I work</h2>
+      <ul>
+        <li><strong>Foundations before tickets.</strong> I write down the architecture, the data model and the failure modes first. Tickets are cheap once the shape is agreed, and expensive when it is not.</li>
+        <li><strong>Questions to find constraints.</strong> Most of the useful design information is what cannot change: a network boundary, a data policy, an approval process, a user’s habit. I ask until I know where those are.</li>
+        <li><strong>Abstractions grounded in practical limits.</strong> A clean design that ignores latency, cost, permissions or how people actually work is a draft. I test every abstraction against those limits before I commit to it.</li>
+        <li><strong>Say what stage it is.</strong> Shipped, partly built and designed are different things, and I label them that way.</li>
+      </ul>
+
+      <h2>Outside work</h2>
+      <p>
+        TODO(adit): one short line on non-work interests.
+      </p>
+    </div>
+  </div>
+</Base>

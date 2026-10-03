@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../utils/url';
+---
+
+<Base title="Not found">
+  <div class="wrap">
+    <section class="page-head">
+      <p class="eyebrow">404</p>
+      <h1>That page does not exist</h1>
+      <p class="lede measure"><a href={url('/')}>Go to the home page</a> or <a href={url('/work')}>see the work</a>.</p>
+    </section>
+  </div>
+</Base>
